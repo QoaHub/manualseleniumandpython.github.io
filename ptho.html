@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Interactiva: Instalación de Selenium y Python</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+            color: #334155; /* Slate 700 */
+        }
+
+        /* Chart Container Rules */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .nav-item.active {
+            background-color: #e0f2fe; /* Sky 100 */
+            color: #0369a1; /* Sky 700 */
+            border-right: 4px solid #0284c7; /* Sky 600 */
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Chosen Palette: Slate & Sky (Neutral warm background with professional blue accents) -->
+    <!-- Application Structure Plan: 
+         Structure: Split-view Dashboard/Wizard.
+         - Sidebar: Navigation/Timeline of the installation process + Progress Gauge (Gamification).
+         - Main Content: Dynamic content area that changes based on the selected step.
+         - Logic: Steps are linear but allow random access.
+         - Rationale: Installation is a sequential process. A checklist/wizard approach reduces cognitive load. 
+           The progress chart motivates completion. OS toggles prevent information overload.
+    -->
+    <!-- Visualization & Content Choices:
+         1. Progress Gauge (Doughnut Chart): Shows completion % of the manual. Goal: Motivate.
+         2. Efficiency Comparison (Bar Chart): Compares "Old Selenium" vs "Modern Selenium" steps. Goal: Highlight value of Selenium Manager.
+         3. OS Selector (Interactive Tabs): Filters installation commands. Goal: Relevance.
+         4. Code Simulator (Interactive Block): Allows "Copying" and simulates execution feedback. Goal: Practice.
+         5. Troubleshooting Cards (Accordion): Hides complexity until needed. Goal: Cleanliness.
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-white p-4 border-b border-slate-200 flex justify-between items-center z-20">
+        <h1 class="text-lg font-bold text-slate-800">Guía Selenium + Python</h1>
+        <button id="mobile-menu-btn" class="text-slate-600 focus:outline-none text-2xl">&#9776;</button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="w-full md:w-64 bg-white border-r border-slate-200 flex-col justify-between hidden md:flex z-10 h-full overflow-y-auto absolute md:relative top-0 left-0 transition-transform duration-300">
+        <div>
+            <div class="p-6 border-b border-slate-100">
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">Guía de Configuración</h1>
+                <p class="text-xs text-slate-500 mt-1">Automatización Web Moderna</p>
+            </div>
+            
+            <nav class="mt-4" id="nav-list">
+                <!-- Navigation Items Injected via JS -->
+            </nav>
+        </div>
+
+        <div class="p-6 bg-slate-50 border-t border-slate-200">
+            <h3 class="text-sm font-semibold text-slate-700 mb-2">Tu Progreso</h3>
+            <div class="chart-container" style="height: 120px; max-height: 120px;">
+                <canvas id="progressChart"></canvas>
+            </div>
+            <p id="progress-text" class="text-center text-xs text-slate-500 mt-2">0% Completado</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8 relative" id="main-content">
+        
+        <!-- Intro Section (Default) -->
+        <div id="content-container" class="max-w-4xl mx-auto fade-in">
+            <!-- Dynamic Content Loaded Here -->
+        </div>
+
+    </main>
+
+    <script>
+        // --- Data & Content Store ---
+        const reportData = {
+            steps: [
+                {
+                    id: 'intro',
+                    title: 'Inicio',
+                    icon: '&#8962;', // House
+                    content: {
+                        heading: 'Bienvenido a la Guía de Selenium y Python',
+                        intro: 'Esta aplicación interactiva te guiará paso a paso para configurar un entorno de desarrollo profesional para la automatización web. Basado en las mejores prácticas modernas (Selenium 4.6+).',
+                        body: `
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+                                <h3 class="text-lg font-semibold text-slate-800 mb-3">¿Por qué esta guía?</h3>
+                                <p class="text-slate-600 mb-4">
+                                    Configurar Selenium solía ser complejo debido a la gestión de drivers. Hoy en día, gracias a <strong>Selenium Manager</strong>, el proceso es mucho más ágil. Esta guía cubre desde la instalación de Python hasta tu primer script "Hola Mundo".
+                                </p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                    <div class="p-4 bg-sky-50 rounded border border-sky-100">
+                                        <span class="text-2xl">⚡</span>
+                                        <h4 class="font-bold text-sky-800 mt-2">Rápido</h4>
+                                        <p class="text-sm text-sky-700">Sin descarga manual de drivers.</p>
+                                    </div>
+                                    <div class="p-4 bg-emerald-50 rounded border border-emerald-100">
+                                        <span class="text-2xl">🛡️</span>
+                                        <h4 class="font-bold text-emerald-800 mt-2">Seguro</h4>
+                                        <p class="text-sm text-emerald-700">Uso de entornos virtuales aislados.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-8">
+                                <button onclick="app.navigateTo('step1')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105">
+                                    Comenzar Instalación &rarr;
+                                </button>
+                            </div>
+                        `
+                    }
+                },
+                {
+                    id: 'step1',
+                    title: '1. Instalar Python',
+                    icon: '&#128187;', // Computer
+                    completed: false,
+                    content: {
+                        heading: 'Paso 1: Instalación de Python',
+                        intro: 'El primer requisito fundamental es tener Python instalado en tu sistema. Selecciona tu sistema operativo a continuación para ver las instrucciones específicas.',
+                        interactiveType: 'os-selector',
+                        data: {
+                            windows: [
+                                'Ve a <a href="https://www.python.org/downloads/" target="_blank" class="text-blue-600 underline">python.org/downloads</a>.',
+                                'Descarga la última versión estable (botón amarillo).',
+                                'Ejecuta el instalador.',
+                                '<strong>MUY IMPORTANTE:</strong> Marca la casilla "Add Python.exe to PATH" en la primera pantalla.'
+                            ],
+                            macos: [
+                                'Mac suele venir con una versión antigua. Se recomienda instalar la actual.',
+                                'Descarga el instalador de macOS desde <a href="https://www.python.org/downloads/" target="_blank" class="text-blue-600 underline">python.org</a>.',
+                                'Sigue los pasos del instalador estándar.',
+                                'Alternativa Homebrew: <code>brew install python</code>'
+                            ],
+                            linux: [
+                                'Abre tu terminal.',
+                                'Ejecuta: <code>sudo apt update</code>',
+                                'Ejecuta: <code>sudo apt install python3 python3-pip python3-venv</code>'
+                            ]
+                        }
+                    }
+                },
+                {
+                    id: 'step2',
+                    title: '2. Verificación',
+                    icon: '&#9989;', // Check
+                    completed: false,
+                    content: {
+                        heading: 'Paso 2: Verificación de la Instalación',
+                        intro: 'Antes de continuar, debemos asegurarnos de que Python está correctamente instalado y accesible desde tu terminal.',
+                        interactiveType: 'verification-sim',
+                        body: `
+                            <div class="mb-6">
+                                <p class="mb-4">Abre tu terminal (Command Prompt, PowerShell o Terminal) y escribe el siguiente comando:</p>
+                                <div class="code-block flex justify-between items-center mb-2">
+                                    <span>python --version</span>
+                                    <button onclick="app.copyText('python --version')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded">Copiar</button>
+                                </div>
+                                <p class="text-sm text-slate-500 mb-4">Nota: En algunos sistemas Linux/Mac puede ser <code>python3 --version</code>.</p>
+                                
+                                <div class="bg-black text-green-400 p-4 rounded font-mono text-sm border-l-4 border-green-600">
+                                    <p class="opacity-50 text-xs text-slate-400 mb-2">// Resultado esperado:</p>
+                                    <p>> python --version</p>
+                                    <p>Python 3.12.x</p>
+                                </div>
+                            </div>
+                        `
+                    }
+                },
+                {
+                    id: 'step3',
+                    title: '3. Entorno Virtual',
+                    icon: '&#128230;', // Box
+                    completed: false,
+                    content: {
+                        heading: 'Paso 3: Configuración del Entorno Virtual',
+                        intro: 'Crear un entorno virtual es una "buena práctica" esencial. Te permite aislar las librerías de tu proyecto para evitar conflictos con otras aplicaciones.',
+                        interactiveType: 'venv-guide',
+                        data: {
+                            setup: [
+                                { label: '1. Crear carpeta', code: 'mkdir mi_bot_selenium\ncd mi_bot_selenium' },
+                                { label: '2. Crear entorno', code: 'python -m venv venv' },
+                                { label: '3. Activar entorno (Windows)', code: 'venv\\Scripts\\activate' },
+                                { label: '3. Activar entorno (Mac/Linux)', code: 'source venv/bin/activate' }
+                            ]
+                        }
+                    }
+                },
+                {
+                    id: 'step4',
+                    title: '4. Instalar Selenium',
+                    icon: '&#11015;', // Down arrow
+                    completed: false,
+                    content: {
+                        heading: 'Paso 4: Instalación de la Librería',
+                        intro: 'Con tu entorno virtual activado (deberías ver <code>(venv)</code> en la terminal), es hora de instalar Selenium usando pip.',
+                        body: `
+                             <div class="flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-sm border border-slate-200">
+                                <div class="code-block w-full max-w-md text-center py-4 text-lg">
+                                    pip install selenium
+                                </div>
+                                <button onclick="app.copyText('pip install selenium')" class="mt-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-6 rounded transition">
+                                    Copiar Comando
+                                </button>
+                                <p class="mt-6 text-sm text-slate-500">
+                                    Este comando descargará los paquetes necesarios desde PyPI.
+                                </p>
+                             </div>
+                        `
+                    }
+                },
+                {
+                    id: 'step5',
+                    title: '5. Drivers (Moderno)',
+                    icon: '&#128663;', // Car
+                    completed: false,
+                    content: {
+                        heading: 'Paso 5: Los Drivers del Navegador',
+                        intro: 'Aquí es donde Selenium ha mejorado drásticamente. Analicemos la diferencia entre el método antiguo y el moderno con Selenium 4.6+.',
+                        interactiveType: 'chart-comparison'
+                    }
+                },
+                {
+                    id: 'step6',
+                    title: '6. Script de Prueba',
+                    icon: '&#128640;', // Rocket
+                    completed: false,
+                    content: {
+                        heading: 'Paso 6: Tu Primer Script ("Hola Mundo")',
+                        intro: 'Vamos a verificar que todo funciona. Este script abrirá Chrome, navegará a Google y se cerrará automáticamente.',
+                        interactiveType: 'code-playground',
+                        code: `from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+
+# Selenium Manager hace la magia aquí:
+driver = webdriver.Chrome()
+
+try:
+    driver.maximize_window()
+    print("Navegando a Google...")
+    driver.get("https://www.google.com")
+    
+    print(f"Título: {driver.title}")
+    
+    # Pausa para observar
+    time.sleep(5)
+
+except Exception as e:
+    print(f"Error: {e}")
+
+finally:
+    print("Cerrando...")
+    driver.quit()`
+                    }
+                },
+                {
+                    id: 'step7',
+                    title: '7. Problemas',
+                    icon: '&#128295;', // Wrench
+                    completed: false,
+                    content: {
+                        heading: 'Solución de Problemas Comunes',
+                        intro: 'Si algo no funcionó, revisa estos errores frecuentes.',
+                        interactiveType: 'accordion',
+                        items: [
+                            { title: 'Error: "pip is not recognized"', text: 'No agregaste Python al PATH durante la instalación. Reinstala Python y marca la casilla "Add to PATH".' },
+                            { title: 'SessionNotCreatedException', text: 'Tu navegador Chrome está muy desactualizado. Ve a Ayuda > Información de Google Chrome y actualízalo.' },
+                            { title: 'El navegador se cierra rápido', text: 'Es normal. Python cierra el proceso al terminar el script. Usa time.sleep() o la opción "detach" para mantenerlo abierto.' }
+                        ]
+                    }
+                }
+            ]
+        };
+
+        // --- Application Logic ---
+        const app = {
+            state: {
+                currentStepId: 'intro',
+                osSelection: 'windows',
+                progress: 0
+            },
+            
+            charts: {},
+
+            init: function() {
+                this.renderSidebar();
+                this.renderContent('intro');
+                this.initMobileMenu();
+                this.updateProgressChart();
+            },
+
+            initMobileMenu: function() {
+                const btn = document.getElementById('mobile-menu-btn');
+                const sidebar = document.getElementById('sidebar');
+                btn.addEventListener('click', () => {
+                    sidebar.classList.toggle('hidden');
+                    sidebar.classList.toggle('absolute');
+                    sidebar.classList.toggle('h-[calc(100vh-60px)]');
+                });
+            },
+
+            renderSidebar: function() {
+                const navList = document.getElementById('nav-list');
+                navList.innerHTML = '';
+                
+                reportData.steps.forEach(step => {
+                    const btn = document.createElement('button');
+                    btn.className = `nav-item w-full text-left px-6 py-3 hover:bg-slate-50 transition flex items-center gap-3 ${this.state.currentStepId === step.id ? 'active' : 'text-slate-600'}`;
+                    btn.onclick = () => this.navigateTo(step.id);
+                    
+                    // Icon + Title
+                    btn.innerHTML = `
+                        <span class="text-lg">${step.icon}</span>
+                        <span class="text-sm font-medium">${step.title}</span>
+                        ${step.completed ? '<span class="ml-auto text-green-500 text-xs font-bold">&#10003;</span>' : ''}
+                    `;
+                    navList.appendChild(btn);
+                });
+            },
+
+            navigateTo: function(stepId) {
+                // Update State
+                this.state.currentStepId = stepId;
+                
+                // Mark previous steps as "read"/complete logic could be more complex, 
+                // but simpler: if you visit a step, it contributes to progress if not visited before.
+                const stepIndex = reportData.steps.findIndex(s => s.id === stepId);
+                if (stepIndex > 0 && !reportData.steps[stepIndex].completed) {
+                   reportData.steps[stepIndex].completed = true;
+                   this.calculateProgress();
+                }
+
+                // Render
+                this.renderSidebar(); // To update active state
+                this.renderContent(stepId);
+                
+                // Close mobile menu if open
+                if(window.innerWidth < 768) {
+                    document.getElementById('sidebar').classList.add('hidden');
+                }
+            },
+
+            calculateProgress: function() {
+                const total = reportData.steps.length - 1; // exclude intro
+                const completed = reportData.steps.filter(s => s.id !== 'intro' && s.completed).length;
+                this.state.progress = Math.round((completed / total) * 100);
+                this.updateProgressChart();
+            },
+
+            updateProgressChart: function() {
+                const ctx = document.getElementById('progressChart').getContext('2d');
+                const remaining = 100 - this.state.progress;
+
+                if (this.charts.progress) {
+                    this.charts.progress.data.datasets[0].data = [this.state.progress, remaining];
+                    this.charts.progress.update();
+                } else {
+                    this.charts.progress = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Completado', 'Pendiente'],
+                            datasets: [{
+                                data: [this.state.progress, remaining],
+                                backgroundColor: ['#0284c7', '#e2e8f0'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '75%',
+                            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                        }
+                    });
+                }
+                document.getElementById('progress-text').innerText = `${this.state.progress}% Completado`;
+            },
+
+            renderContent: function(stepId) {
+                const container = document.getElementById('content-container');
+                const step = reportData.steps.find(s => s.id === stepId);
+                
+                let contentHTML = `
+                    <div class="mb-8 border-b border-slate-200 pb-4">
+                        <h2 class="text-3xl font-bold text-slate-800 mb-2">${step.content.heading}</h2>
+                        <p class="text-lg text-slate-600 leading-relaxed">${step.content.intro}</p>
+                    </div>
+                `;
+
+                // Logic to inject specific interactive components
+                if (step.content.interactiveType === 'os-selector') {
+                    contentHTML += this.renderOSSelector(step.content.data);
+                } else if (step.content.interactiveType === 'verification-sim') {
+                    contentHTML += step.content.body;
+                } else if (step.content.interactiveType === 'venv-guide') {
+                    contentHTML += this.renderVenvGuide(step.content.data);
+                } else if (step.content.interactiveType === 'chart-comparison') {
+                    contentHTML += this.renderComparisonChart();
+                } else if (step.content.interactiveType === 'code-playground') {
+                    contentHTML += this.renderCodePlayground(step.content.code);
+                } else if (step.content.interactiveType === 'accordion') {
+                    contentHTML += this.renderAccordion(step.content.items);
+                } else if (step.content.body) {
+                    contentHTML += step.content.body;
+                }
+
+                // Add "Next Step" button logic (unless last step)
+                const currentIndex = reportData.steps.findIndex(s => s.id === stepId);
+                if (currentIndex < reportData.steps.length - 1) {
+                    const nextStep = reportData.steps[currentIndex + 1];
+                    contentHTML += `
+                        <div class="mt-12 flex justify-end">
+                            <button onclick="app.navigateTo('${nextStep.id}')" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 px-6 rounded shadow flex items-center gap-2">
+                                Siguiente: ${nextStep.title} &rarr;
+                            </button>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = contentHTML;
+
+                // Post-render init (for charts inside the content)
+                if (step.content.interactiveType === 'chart-comparison') {
+                    this.initComparisonChart();
+                }
+            },
+
+            renderOSSelector: function(data) {
+                // Determine active OS from state or default
+                const currentOS = this.state.osSelection;
+                
+                return `
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="flex border-b border-slate-200 bg-slate-50">
+                            <button onclick="app.setOS('windows')" class="flex-1 py-3 font-medium text-sm ${currentOS === 'windows' ? 'bg-white border-b-2 border-blue-500 text-blue-600' : 'text-slate-500 hover:text-slate-700'}">Windows</button>
+                            <button onclick="app.setOS('macos')" class="flex-1 py-3 font-medium text-sm ${currentOS === 'macos' ? 'bg-white border-b-2 border-blue-500 text-blue-600' : 'text-slate-500 hover:text-slate-700'}">macOS</button>
+                            <button onclick="app.setOS('linux')" class="flex-1 py-3 font-medium text-sm ${currentOS === 'linux' ? 'bg-white border-b-2 border-blue-500 text-blue-600' : 'text-slate-500 hover:text-slate-700'}">Linux</button>
+                        </div>
+                        <div class="p-6">
+                            <ul class="space-y-3 list-disc pl-5 text-slate-700">
+                                ${data[currentOS].map(item => `<li>${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            },
+
+            setOS: function(os) {
+                this.state.osSelection = os;
+                this.renderContent('step1'); // Re-render Step 1
+            },
+
+            renderVenvGuide: function(data) {
+                return `
+                    <div class="space-y-6">
+                        ${data.setup.map(step => `
+                            <div class="bg-white p-4 rounded-lg border border-slate-200">
+                                <h4 class="font-bold text-slate-700 mb-2">${step.label}</h4>
+                                <div class="code-block text-sm flex justify-between items-start">
+                                    <pre>${step.code}</pre>
+                                    <button onclick="app.copyText(\`${step.code.replace(/\\/g, '\\\\')}\`)" class="text-xs bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded ml-2">Copiar</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            renderCodePlayground: function(code) {
+                return `
+                    <div class="relative group">
+                        <div class="code-block text-sm leading-relaxed p-4 h-96 overflow-y-auto">
+                            <pre><code class="language-python">${this.highlightSyntax(code)}</code></pre>
+                        </div>
+                        <div class="absolute top-4 right-4 flex space-x-2">
+                             <button onclick="app.copyText(decodeURIComponent('${encodeURIComponent(code)}'))" class="bg-white/10 hover:bg-white/20 backdrop-blur text-white text-xs px-3 py-1.5 rounded border border-white/20">
+                                Copiar
+                            </button>
+                            <button onclick="app.runSimulation()" class="bg-green-600 hover:bg-green-500 text-white text-xs px-3 py-1.5 rounded shadow">
+                                &#9658; Simular Ejecución
+                            </button>
+                        </div>
+                    </div>
+                    <div id="simulation-output" class="hidden mt-4 p-4 bg-slate-900 text-green-400 font-mono text-xs rounded border border-slate-800">
+                        <p class="animate-pulse">> Iniciando WebDriver...</p>
+                    </div>
+                `;
+            },
+
+            highlightSyntax: function(code) {
+                // Simple regex based highlighting for display purposes
+                return code
+                    .replace(/import|from|try|except|finally|print|def/g, '<span class="text-purple-400">$&</span>')
+                    .replace(/"(.*?)"/g, '<span class="text-green-300">"$1"</span>')
+                    .replace(/#.*/g, '<span class="text-slate-500">$&</span>')
+                    .replace(/webdriver|By|time/g, '<span class="text-yellow-300">$&</span>');
+            },
+
+            runSimulation: function() {
+                const out = document.getElementById('simulation-output');
+                out.classList.remove('hidden');
+                out.innerHTML = '<p class="text-yellow-400">Inicializando...</p>';
+                
+                setTimeout(() => { out.innerHTML += '<p>> Navegador Chrome abierto.</p>'; }, 800);
+                setTimeout(() => { out.innerHTML += '<p>> Navegando a: https://www.google.com</p>'; }, 1600);
+                setTimeout(() => { out.innerHTML += '<p class="text-white">> Título de la página: Google</p>'; }, 2400);
+                setTimeout(() => { out.innerHTML += '<p class="text-slate-400">> Cerrando navegador...</p>'; }, 4000);
+                setTimeout(() => { out.innerHTML += '<p class="text-green-500 font-bold">> Proceso finalizado (Exit Code 0)</p>'; }, 5000);
+            },
+
+            renderAccordion: function(items) {
+                return `
+                    <div class="space-y-4">
+                        ${items.map((item, idx) => `
+                            <div class="border border-slate-200 rounded-lg bg-white overflow-hidden">
+                                <button onclick="document.getElementById('acc-${idx}').classList.toggle('hidden')" class="w-full text-left px-6 py-4 font-semibold text-slate-800 hover:bg-slate-50 flex justify-between items-center focus:outline-none">
+                                    <span>${item.title}</span>
+                                    <span class="text-slate-400 text-xl">+</span>
+                                </button>
+                                <div id="acc-${idx}" class="hidden px-6 py-4 bg-red-50 text-slate-700 border-t border-slate-100 text-sm">
+                                    ${item.text}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            renderComparisonChart: function() {
+                return `
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-8">
+                        <div>
+                            <p class="mb-4">
+                                Anteriormente, necesitabas descargar un ejecutable (driver) y añadirlo al PATH manualmente. 
+                                Si tu navegador se actualizaba, el script fallaba.
+                            </p>
+                            <p class="font-semibold text-green-700">
+                                Con Selenium 4.6+, el "Selenium Manager" hace todo esto por ti automáticamente.
+                            </p>
+                            <ul class="mt-4 space-y-2 text-sm text-slate-600">
+                                <li class="flex items-center gap-2"><span class="text-red-500">&#10007;</span> Sin descargas manuales</li>
+                                <li class="flex items-center gap-2"><span class="text-red-500">&#10007;</span> Sin configuración de PATH</li>
+                                <li class="flex items-center gap-2"><span class="text-green-500">&#10003;</span> Mantenimiento Cero</li>
+                            </ul>
+                        </div>
+                        <div class="chart-container bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                `;
+            },
+
+            initComparisonChart: function() {
+                const ctx = document.getElementById('comparisonChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Pasos Manuales', 'Riesgo de Error'],
+                        datasets: [
+                            {
+                                label: 'Método Antiguo',
+                                data: [5, 8],
+                                backgroundColor: '#94a3b8'
+                            },
+                            {
+                                label: 'Nuevo (Selenium Manager)',
+                                data: [1, 1],
+                                backgroundColor: '#10b981'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            title: { display: true, text: 'Eficiencia de Configuración' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, max: 10 }
+                        }
+                    }
+                });
+            },
+
+            copyText: function(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Copiado al portapapeles!');
+                });
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
+</body>
+</html>
